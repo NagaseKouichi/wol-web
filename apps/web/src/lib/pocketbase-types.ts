@@ -87,8 +87,11 @@ export type SuperusersRecord = {
 }
 
 export type HostsRecord = {
+	agentToken?: string
+	agentUrl?: string
 	created?: IsoDateString
 	id: string
+	hostIp?: string
 	ip: string
 	mac: string
 	name: string

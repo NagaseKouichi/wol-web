@@ -1,0 +1,14 @@
+[Unit]
+Description=WOL Host Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/wol-host-agent.env
+ExecStart=/usr/local/bin/wol-host-agent
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

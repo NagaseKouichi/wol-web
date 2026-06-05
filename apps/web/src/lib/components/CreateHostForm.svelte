@@ -21,6 +21,15 @@
 			.min(1, 'MAC is required')
 			.regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'Invalid MAC address format'),
 		ip: z.string().min(1, 'IP is required').ip(),
+		hostIp: z
+			.string()
+			.optional()
+			.refine((value) => !value || z.string().ip().safeParse(value).success, 'Invalid host IP'),
+		agentUrl: z
+			.string()
+			.optional()
+			.refine((value) => !value || z.string().url().safeParse(value).success, 'Invalid agent URL'),
+		agentToken: z.string().optional(),
 		port: z.number().default(9)
 	});
 
@@ -104,6 +113,22 @@
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
+	<Form.Field {form} name="hostIp">
+		<Form.Control>
+			{#snippet children({ props })}
+				<div class="flex flex-col gap-2">
+					<Form.Label>Host IP</Form.Label>
+					<Input
+						{...props}
+						name="hostIp"
+						bind:value={$formData.hostIp}
+						placeholder="e.g. 192.168.1.54"
+					/>
+				</div>
+			{/snippet}
+		</Form.Control>
+		<Form.FieldErrors />
+	</Form.Field>
 	<Form.Field {form} name="port">
 		<Form.Control>
 			{#snippet children({ props })}
@@ -115,11 +140,40 @@
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
-	<Form.Button
-		class={cn('my-1 w-full', {
-			'col-span-2': dev
-		})}>Create</Form.Button
-	>
+	<Form.Field {form} name="agentUrl">
+		<Form.Control>
+			{#snippet children({ props })}
+				<div class="flex flex-col gap-2">
+					<Form.Label>Agent URL</Form.Label>
+					<Input
+						{...props}
+						name="agentUrl"
+						bind:value={$formData.agentUrl}
+						placeholder="e.g. http://192.168.1.54:8765"
+					/>
+				</div>
+			{/snippet}
+		</Form.Control>
+		<Form.FieldErrors />
+	</Form.Field>
+	<Form.Field {form} name="agentToken">
+		<Form.Control>
+			{#snippet children({ props })}
+				<div class="flex flex-col gap-2">
+					<Form.Label>Agent Token</Form.Label>
+					<Input
+						{...props}
+						name="agentToken"
+						type="password"
+						bind:value={$formData.agentToken}
+						placeholder="Long random token"
+					/>
+				</div>
+			{/snippet}
+		</Form.Control>
+		<Form.FieldErrors />
+	</Form.Field>
+	<Form.Button class="col-span-2 my-1 w-full">Create</Form.Button>
 	{#if dev}
 		<!-- <SuperDebug data={$formData} /> -->
 	{/if}

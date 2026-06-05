@@ -1,6 +1,6 @@
 services:
   wol:
-    image: "huakunshen/wol"
+    build: .
     container_name: wol-web
     network_mode: host
     volumes:
@@ -9,5 +9,6 @@ services:
       - SUPERUSER_EMAIL=root@example.com
       - SUPERUSER_PASSWORD=changeme
       - PORT=8090
+
 volumes:
   wol_data:
