@@ -22,6 +22,7 @@ export type HostFormData = {
 export function createHostsStore() {
 	const hosts = writable<HostsRecord[]>([]);
 	const statuses = writable<Record<string, HostStatus>>({});
+	const statusPollTokens = new Map<string, symbol>();
 
 	async function fetchHosts() {
 		const records = await pb.collection('hosts').getFullList();
@@ -49,6 +50,48 @@ export function createHostsStore() {
 			);
 		} catch (err) {
 			console.error('Failed to fetch host statuses', err);
+		}
+	}
+
+	async function fetchHostStatus(host: HostsRecord) {
+		const result = await pb.send<Record<string, HostStatus>>('/api/host-statuses', {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ ids: [host.id] })
+		});
+		const status = result[host.id] ?? { online: false };
+		statuses.update((current) => ({ ...current, [host.id]: status }));
+		return status;
+	}
+
+	function pollHostStatus(host: HostsRecord, targetOnline: boolean) {
+		const delays = [3000, 6000, 9000, 12000, 15000, 20000, 30000, 45000, 60000];
+		const token = Symbol(host.id);
+		statusPollTokens.set(host.id, token);
+
+		for (const [index, delay] of delays.entries()) {
+			setTimeout(async () => {
+				if (statusPollTokens.get(host.id) !== token) {
+					return;
+				}
+
+				try {
+					const status = await fetchHostStatus(host);
+					if (status.online === targetOnline) {
+						statusPollTokens.delete(host.id);
+						return;
+					}
+				} catch (err) {
+					console.error('Failed to poll host status', err);
+				}
+
+				if (index === delays.length - 1 && statusPollTokens.get(host.id) === token) {
+					statusPollTokens.delete(host.id);
+				}
+			}, delay);
 		}
 	}
 
@@ -92,7 +135,7 @@ export function createHostsStore() {
 		})
 			.then((res) => {
 				toast.success('WakeOnLan Magic Packet Sent');
-				setTimeout(() => fetchHostStatuses(), 5000);
+				pollHostStatus(host, true);
 			})
 			.catch((err) => {
 				toast.error('Failed to wake host', {
@@ -112,7 +155,7 @@ export function createHostsStore() {
 		})
 			.then(() => {
 				toast.success(action === 'shutdown' ? 'Shutdown requested' : 'Sleep requested');
-				setTimeout(() => fetchHostStatuses(), 3000);
+				pollHostStatus(host, false);
 			})
 			.catch((err) => {
 				toast.error('Failed to request power action', {
@@ -126,6 +169,7 @@ export function createHostsStore() {
 		statuses,
 		fetchHosts,
 		fetchHostStatuses,
+		fetchHostStatus,
 		createHost,
 		updateHost,
 		deleteHost,
