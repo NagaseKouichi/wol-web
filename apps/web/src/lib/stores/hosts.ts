@@ -9,6 +9,16 @@ export type HostStatus = {
 	powerAvailable?: boolean;
 };
 
+export type HostFormData = {
+	agentToken?: string;
+	agentUrl?: string;
+	ip: string;
+	hostIp?: string;
+	mac: string;
+	name: string;
+	port: number;
+};
+
 export function createHostsStore() {
 	const hosts = writable<HostsRecord[]>([]);
 	const statuses = writable<Record<string, HostStatus>>({});
@@ -42,22 +52,27 @@ export function createHostsStore() {
 		}
 	}
 
-	async function createHost(host: {
-		agentToken?: string;
-		agentUrl?: string;
-		ip: string;
-		hostIp?: string;
-		mac: string;
-		name: string;
-		port: number;
-		user: RecordIdString;
-	}) {
-		await pb.collection('hosts').create(host);
+	async function createHost(host: HostFormData) {
+		await pb.send('/api/host-config', {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(host)
+		});
 		fetchHosts();
 	}
 
-	async function updateHost(host: HostsRecord) {
-		await pb.collection('hosts').update(host.id, host);
+	async function updateHost(id: RecordIdString, host: Partial<HostFormData>) {
+		await pb.send('/api/host-config', {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ ...host, id })
+		});
 		fetchHosts();
 	}
 

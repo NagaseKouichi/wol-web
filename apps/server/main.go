@@ -84,6 +84,26 @@ func main() {
 
 			return e.JSON(200, statuses)
 		})
+		se.Router.POST("/api/host-config", func(e *core.RequestEvent) error {
+			if e.Auth == nil {
+				return e.JSON(401, map[string]string{"message": "Unauthorized"})
+			}
+
+			var data hostConfigRequest
+			if err := e.BindBody(&data); err != nil {
+				return e.BadRequestError("Failed to read request data", err)
+			}
+
+			record, err := upsertHostConfig(app, e.Auth.Id, data)
+			if err != nil {
+				return e.BadRequestError("Failed to save host config", err)
+			}
+
+			return e.JSON(200, map[string]string{
+				"message": "Host config saved",
+				"id":      record.Id,
+			})
+		})
 		se.Router.POST("/api/host-power", func(e *core.RequestEvent) error {
 			if e.Auth == nil {
 				return e.JSON(401, map[string]string{"message": "Unauthorized"})
@@ -160,9 +180,6 @@ func main() {
 			}
 			mac := requestedHost.GetString("mac")
 			port := requestedHost.GetInt("port")
-			if !ok {
-				return e.JSON(400, map[string]string{"message": "Failed to parse port"})
-			}
 			targetIp := requestedHost.GetString("ip")
 			err = wol.WakeOnLan(mac, targetIp, strconv.Itoa(port))
 			if err != nil {
@@ -182,6 +199,54 @@ type hostStatus struct {
 	Online         bool   `json:"online"`
 	IP             string `json:"ip,omitempty"`
 	PowerAvailable bool   `json:"powerAvailable"`
+}
+
+type hostConfigRequest struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Mac        string `json:"mac"`
+	IP         string `json:"ip"`
+	HostIP     string `json:"hostIp"`
+	Port       int    `json:"port"`
+	AgentURL   string `json:"agentUrl"`
+	AgentToken string `json:"agentToken"`
+}
+
+func upsertHostConfig(app *pocketbase.PocketBase, userID string, data hostConfigRequest) (*core.Record, error) {
+	collection, err := app.FindCollectionByNameOrId("hosts")
+	if err != nil {
+		return nil, err
+	}
+
+	var record *core.Record
+	if strings.TrimSpace(data.ID) == "" {
+		record = core.NewRecord(collection)
+		record.Set("user", userID)
+	} else {
+		record, err = app.FindRecordById("hosts", data.ID)
+		if err != nil {
+			return nil, err
+		}
+		if record.GetString("user") != userID {
+			return nil, errors.New("unauthorized")
+		}
+	}
+
+	record.Set("name", strings.TrimSpace(data.Name))
+	record.Set("mac", strings.TrimSpace(data.Mac))
+	record.Set("ip", strings.TrimSpace(data.IP))
+	record.Set("hostIp", strings.TrimSpace(data.HostIP))
+	record.Set("port", data.Port)
+	record.Set("agentUrl", strings.TrimSpace(data.AgentURL))
+	if strings.TrimSpace(data.AgentToken) != "" {
+		record.Set("agentToken", strings.TrimSpace(data.AgentToken))
+	}
+
+	if err := app.Save(record); err != nil {
+		return nil, err
+	}
+
+	return record, nil
 }
 
 func resolveHostStatus(macAddress string, broadcastAddress string, hostIP string, port int) hostStatus {

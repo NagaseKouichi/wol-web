@@ -9,12 +9,17 @@
 		CircleX,
 		LoaderCircle,
 		Moon,
-		Power
+		Power,
+		Pencil
 	} from 'lucide-svelte';
 	import { Button } from './ui/button';
 	import { hostsStore } from '$lib/stores/hosts';
 
-	let { host, class: className }: { host: HostsRecord; class?: string } = $props();
+	let {
+		host,
+		onEdit,
+		class: className
+	}: { host: HostsRecord; onEdit?: (host: HostsRecord) => void; class?: string } = $props();
 	const statuses = hostsStore.statuses;
 	let status = $derived($statuses[host.id]);
 	let powerAvailable = $derived(Boolean(status?.powerAvailable));
@@ -24,13 +29,18 @@
 	}
 
 	function shutdown() {
-		if (window.confirm(`Shutdown ${host.name}?`)) {
-			hostsStore.powerHost(host, 'shutdown');
-		}
+		confirmPowerAction('shutdown');
 	}
 
 	function sleep() {
-		hostsStore.powerHost(host, 'sleep');
+		confirmPowerAction('sleep');
+	}
+
+	function confirmPowerAction(action: 'shutdown' | 'sleep') {
+		const label = action === 'shutdown' ? 'shutdown' : 'put to sleep';
+		if (window.confirm(`Are you sure you want to ${label} ${host.name}?`)) {
+			hostsStore.powerHost(host, action);
+		}
 	}
 
 	function deleteHost() {
@@ -38,15 +48,29 @@
 			hostsStore.deleteHost(host);
 		}
 	}
+
+	function editHost() {
+		onEdit?.(host);
+	}
 </script>
 
 <Card.Root class={cn('relative', className)}>
 	<Card.Content>
 		<Button
 			size="icon"
+			class="absolute right-10 top-2 h-6 w-6 rounded-full"
+			variant="outline"
+			onclick={editHost}
+			title="Edit host"
+		>
+			<Pencil class="h-3 w-3" />
+		</Button>
+		<Button
+			size="icon"
 			class="absolute right-2 top-2 h-6 w-6 rounded-full"
 			variant="destructive"
 			onclick={deleteHost}
+			title="Delete host"
 		>
 			<Trash2 class="h-3 w-3" />
 		</Button>

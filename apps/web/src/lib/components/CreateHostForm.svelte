@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { superForm, defaults } from 'sveltekit-superforms';
-	import SuperDebug from 'sveltekit-superforms';
 	import { zodClient, zod } from 'sveltekit-superforms/adapters';
 	import { z } from 'zod';
 	import * as Form from '$lib/components/ui/form/index.js';
@@ -8,11 +7,11 @@
 	import { toast } from 'svelte-sonner';
 	import { cn } from '$lib/utils';
 	import { pb } from '$lib/pb';
-	import { dev } from '$app/environment';
-	import { hostsStore } from '$lib/stores/hosts';
+	import { hostsStore, type HostFormData } from '$lib/stores/hosts';
 	import * as Popover from '$lib/components/ui/popover/index';
 	import { Button } from './ui/button';
-	import { Icon, InfoIcon } from 'lucide-svelte';
+	import { InfoIcon } from 'lucide-svelte';
+	import type { HostsRecord } from '$lib/pocketbase-types';
 
 	const formSchema = z.object({
 		name: z.string().min(1, 'Name is required'),
@@ -33,10 +32,51 @@
 		port: z.number().default(9)
 	});
 
+	function emptyFormData(): HostFormData {
+		return {
+			name: '',
+			mac: '',
+			ip: '',
+			hostIp: '',
+			port: 9,
+			agentUrl: '',
+			agentToken: ''
+		};
+	}
+
+	function formDataFromHost(host: HostsRecord): HostFormData {
+		return {
+			name: host.name,
+			mac: host.mac,
+			ip: host.ip,
+			hostIp: host.hostIp ?? '',
+			port: host.port,
+			agentUrl: host.agentUrl ?? '',
+			agentToken: ''
+		};
+	}
+
+	function updatePayload(data: HostFormData): Partial<HostFormData> {
+		const payload: Partial<HostFormData> = {
+			name: data.name,
+			mac: data.mac,
+			ip: data.ip,
+			hostIp: data.hostIp || '',
+			port: data.port,
+			agentUrl: data.agentUrl || ''
+		};
+
+		if (data.agentToken) {
+			payload.agentToken = data.agentToken;
+		}
+
+		return payload;
+	}
+
 	const form = superForm(defaults(zod(formSchema)), {
 		validators: zodClient(formSchema),
 		SPA: true,
-		onUpdate({ form, cancel }) {
+		async onUpdate({ form, cancel }) {
 			if (!form.valid) {
 				toast.error('Invalid');
 				return;
@@ -45,14 +85,44 @@
 				toast.error('You must be logged in to create a host');
 				return;
 			}
-			hostsStore.createHost({ ...form.data, user: pb.authStore.record?.id });
-			toast.success('Host created');
+
+			try {
+				if (editingHost) {
+					await hostsStore.updateHost(editingHost.id, updatePayload(form.data));
+					toast.success('Host updated');
+				} else {
+					await hostsStore.createHost(form.data);
+					toast.success('Host created');
+				}
+			} catch (err) {
+				toast.error(editingHost ? 'Failed to update host' : 'Failed to create host', {
+					description: err instanceof Error ? err.message : String(err)
+				});
+				cancel();
+				return;
+			}
+
+			$formData = emptyFormData();
+			editingHost = null;
+			loadedHostId = null;
 			cancel();
 		}
 	});
-	const { form: formData, enhance, errors } = form;
+	const { form: formData, enhance } = form;
 
-	let { class: className }: { class?: string } = $props();
+	let {
+		editingHost = $bindable<HostsRecord | null>(null),
+		class: className
+	}: { editingHost?: HostsRecord | null; class?: string } = $props();
+
+	let loadedHostId = $state<string | null>(null);
+
+	$effect(() => {
+		if (editingHost && editingHost.id !== loadedHostId) {
+			$formData = formDataFromHost(editingHost);
+			loadedHostId = editingHost.id;
+		}
+	});
 </script>
 
 <form method="POST" use:enhance class={cn('grid grid-cols-2 gap-2', className)}>
@@ -173,8 +243,5 @@
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
-	<Form.Button class="col-span-2 my-1 w-full">Create</Form.Button>
-	{#if dev}
-		<!-- <SuperDebug data={$formData} /> -->
-	{/if}
+	<Form.Button class="col-span-2 my-1 w-full">{editingHost ? 'Edit' : 'Create'}</Form.Button>
 </form>
