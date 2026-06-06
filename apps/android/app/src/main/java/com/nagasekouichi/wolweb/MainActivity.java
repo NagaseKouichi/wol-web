@@ -66,11 +66,13 @@ public class MainActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(getColorValue(R.color.app_background));
 
+        int statusBarHeight = getStatusBarHeight();
         FrameLayout toolbar = new FrameLayout(this);
         toolbar.setBackgroundColor(getColorValue(R.color.app_background));
+        toolbar.setPadding(0, statusBarHeight, 0, 0);
         root.addView(toolbar, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(48)
+                statusBarHeight + dp(48)
         ));
 
         webView = new WebView(this);
@@ -119,8 +121,8 @@ public class MainActivity extends Activity {
         settingsButton.setOnClickListener(v -> showSettings(false));
 
         FrameLayout.LayoutParams buttonParams = new FrameLayout.LayoutParams(dp(44), dp(44));
-        buttonParams.gravity = Gravity.CENTER_VERTICAL | Gravity.END;
-        buttonParams.setMargins(0, 0, dp(8), 0);
+        buttonParams.gravity = Gravity.BOTTOM | Gravity.START;
+        buttonParams.setMargins(dp(8), 0, 0, dp(2));
 
         toolbar.addView(settingsButton, buttonParams);
         swipeRefreshLayout.addView(webView);
@@ -298,6 +300,14 @@ public class MainActivity extends Activity {
 
     private int dp(int value) {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    private int getStatusBarHeight() {
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId <= 0) {
+            return 0;
+        }
+        return getResources().getDimensionPixelSize(resourceId);
     }
 
     private int getColorValue(int id) {
