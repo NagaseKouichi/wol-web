@@ -1,0 +1,57 @@
+Menu="Settings"
+Title="WOL Host Agent"
+Icon="bolt"
+Type="php"
+---
+<?php
+$plugin = "wol-host-agent";
+$cfg = parse_plugin_cfg($plugin);
+
+exec("/etc/rc.d/rc.wol-host-agent status 2>/dev/null", $statusOutput, $statusCode);
+$status = trim(implode(" ", $statusOutput));
+$running = stripos($status, "Running") !== false;
+$tokenSet = isset($cfg["TOKEN"]) && strlen($cfg["TOKEN"]) > 0;
+$port = htmlspecialchars($cfg["PORT"] ?? "8765", ENT_QUOTES);
+$enabled = $cfg["ENABLED"] ?? "yes";
+?>
+
+<form markdown="1" method="POST" action="/update.php" target="progressFrame">
+<input type="hidden" name="#file" value="<?=$plugin?>/<?=$plugin?>.cfg">
+<input type="hidden" name="#command" value="/usr/local/emhttp/plugins/<?=$plugin?>/scripts/apply.sh">
+
+_(Enable Agent)_:
+: <select name="ENABLED">
+  <?=mk_option($enabled, "yes", _("Yes"))?>
+  <?=mk_option($enabled, "no", _("No"))?>
+  </select>
+
+_(Agent Token)_:
+: <input type="password" name="TOKEN" value="<?=htmlspecialchars($cfg["TOKEN"] ?? "", ENT_QUOTES)?>" autocomplete="new-password" spellcheck="false">
+<blockquote class="inline_help">
+Use a long random token. Configure the same value in wol-web for this host.
+</blockquote>
+
+_(Port)_:
+: <input type="number" name="PORT" value="<?=$port?>" min="1" max="65535">
+<blockquote class="inline_help">
+The agent listens on this TCP port. The wol-web Agent URL should look like http://HOST_IP:PORT.
+</blockquote>
+
+_(Status)_:
+: <span class="<?=$running ? 'green-text' : 'orange-text'?>"><?=$running ? _("Running") : _("Stopped")?></span>
+  <?php if (!$tokenSet): ?>
+  <span class="orange-text"> - <?=_("Token is not configured")?></span>
+  <?php endif; ?>
+
+<input type="submit" name="#default" value="_(Default)_">
+: <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">
+</form>
+
+<form markdown="1" method="POST" action="/plugins/<?=$plugin?>/scripts/control.php" target="progressFrame" style="margin-top: 1rem;">
+<input type="hidden" name="csrf_token" value="<?=$var['csrf_token']?>">
+
+_(Service Control)_:
+: <input type="submit" name="action" value="Start">
+  <input type="submit" name="action" value="Stop">
+  <input type="submit" name="action" value="Restart">
+</form>

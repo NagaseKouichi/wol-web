@@ -53,8 +53,18 @@ sudo systemctl disable wol-host-agent.service
 
 ## Install On Unraid
 
-Unraid does not use `systemd`, so use `/boot/config/go` or the User Scripts
-plugin for boot startup.
+The preferred Unraid installation is the plugin in `plugin/`. It installs the
+agent, adds a Settings page, and manages startup automatically.
+
+Build and install instructions:
+
+```text
+apps/host-agent/plugin/README.md
+```
+
+The older manual method below is still useful for quick testing. Unraid does not
+use `systemd`, so it uses `/boot/config/go` or the User Scripts plugin for boot
+startup.
 
 Build the Linux binary on another machine:
 

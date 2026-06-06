@@ -1,0 +1,73 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name        "wol-host-agent">
+<!ENTITY author      "wol-web">
+<!ENTITY version     "__VERSION__">
+<!ENTITY pluginURL   "__PLUGIN_URL__">
+<!ENTITY packageURL  "__PACKAGE_URL__">
+<!ENTITY packageFile "wol-host-agent-__VERSION__-x86_64-1.txz">
+<!ENTITY packageSHA  "__PACKAGE_SHA256__">
+<!ENTITY pluginLOC   "/boot/config/plugins/&name;">
+]>
+<PLUGIN name="&name;"
+        author="&author;"
+        version="&version;"
+        launch="Settings/WOLHostAgent"
+        pluginURL="&pluginURL;"
+        icon="bolt"
+        min="6.9.0"
+        support="https://github.com/NagaseKouichi/wol-web"
+        project="https://github.com/NagaseKouichi/wol-web"
+        readme="https://github.com/NagaseKouichi/wol-web/tree/main/apps/host-agent/plugin">
+
+<CHANGES>
+### &version;
+- Add WOL Host Agent service and Settings page for Unraid.
+</CHANGES>
+
+<FILE Run="/bin/bash">
+<INLINE>
+mkdir -p &pluginLOC;
+if [ ! -f &pluginLOC;/&name;.cfg ]; then
+  printf '%s\n' 'ENABLED="yes"' 'TOKEN=""' 'PORT="8765"' > &pluginLOC;/&name;.cfg
+  chmod 600 &pluginLOC;/&name;.cfg
+fi
+</INLINE>
+</FILE>
+
+<FILE Name="&pluginLOC;/&packageFile;" Run="upgradepkg --install-new --reinstall">
+<URL>&packageURL;</URL>
+<SHA256>&packageSHA;</SHA256>
+</FILE>
+
+<FILE Run="/bin/bash">
+<INLINE>
+chmod +x /etc/rc.d/rc.wol-host-agent
+chmod +x /usr/local/emhttp/plugins/&name;/scripts/apply.sh
+/usr/local/emhttp/plugins/&name;/scripts/apply.sh || true
+echo ""
+echo "----------------------------------------------------"
+echo " &name; has been installed."
+echo " Configure it from Settings > WOL Host Agent."
+echo "----------------------------------------------------"
+echo ""
+</INLINE>
+</FILE>
+
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+/etc/rc.d/rc.wol-host-agent stop || true
+removepkg wol-host-agent || true
+rm -rf /usr/local/emhttp/plugins/&name;
+rm -f /etc/rc.d/rc.wol-host-agent
+rm -f &pluginLOC;/wol-host-agent-*.txz
+echo ""
+echo "----------------------------------------------------"
+echo " &name; has been removed."
+echo " Configuration remains in &pluginLOC;/&name;.cfg."
+echo "----------------------------------------------------"
+echo ""
+</INLINE>
+</FILE>
+
+</PLUGIN>
