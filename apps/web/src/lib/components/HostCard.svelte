@@ -10,10 +10,11 @@
 		LoaderCircle,
 		Moon,
 		Power,
-		Pencil
+		Pencil,
+		RefreshCw
 	} from 'lucide-svelte';
 	import { Button } from './ui/button';
-	import { hostsStore } from '$lib/stores/hosts';
+	import { hostsStore, type HostPowerAction } from '$lib/stores/hosts';
 
 	let {
 		host,
@@ -36,8 +37,13 @@
 		confirmPowerAction('sleep');
 	}
 
-	function confirmPowerAction(action: 'shutdown' | 'sleep') {
-		const label = action === 'shutdown' ? 'shutdown' : 'put to sleep';
+	function reboot() {
+		confirmPowerAction('reboot');
+	}
+
+	function confirmPowerAction(action: HostPowerAction) {
+		const label =
+			action === 'shutdown' ? 'shutdown' : action === 'reboot' ? 'reboot' : 'put to sleep';
 		if (window.confirm(`Are you sure you want to ${label} ${host.name}?`)) {
 			hostsStore.powerHost(host, action);
 		}
@@ -125,6 +131,17 @@
 			>
 				<Power class="h-4 w-4" />
 				Shutdown
+			</Button>
+			<Button
+				size="sm"
+				variant="outline"
+				class="w-full"
+				onclick={reboot}
+				disabled={!powerAvailable}
+				title={powerAvailable ? 'Reboot' : 'Host agent is not configured'}
+			>
+				<RefreshCw class="h-4 w-4" />
+				Reboot
 			</Button>
 			<Button
 				size="sm"

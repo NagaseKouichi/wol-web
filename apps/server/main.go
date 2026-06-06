@@ -120,7 +120,7 @@ func main() {
 			}
 
 			action, ok := info.Body["action"].(string)
-			if !ok || (action != "shutdown" && action != "sleep") {
+			if !ok || (action != "shutdown" && action != "sleep" && action != "reboot") {
 				return e.BadRequestError("Invalid power action", nil)
 			}
 

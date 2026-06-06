@@ -45,7 +45,7 @@ func main() {
 			return
 		}
 
-		if data.Action != "shutdown" && data.Action != "sleep" {
+		if data.Action != "shutdown" && data.Action != "sleep" && data.Action != "reboot" {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"message": "Invalid power action"})
 			return
 		}
@@ -109,12 +109,19 @@ func commandFromEnv(action string) string {
 		if command := strings.TrimSpace(os.Getenv("HOST_AGENT_SLEEP_CMD")); command != "" {
 			return command
 		}
+	case "reboot":
+		if command := strings.TrimSpace(os.Getenv("HOST_AGENT_REBOOT_CMD")); command != "" {
+			return command
+		}
 	}
 
 	switch runtime.GOOS {
 	case "windows":
 		if action == "shutdown" {
 			return "shutdown /s /t 0"
+		}
+		if action == "reboot" {
+			return "shutdown /r /t 0"
 		}
 		if action == "sleep" {
 			return "rundll32.exe powrprof.dll,SetSuspendState 0,1,0"
@@ -123,12 +130,18 @@ func commandFromEnv(action string) string {
 		if action == "shutdown" {
 			return "systemctl poweroff"
 		}
+		if action == "reboot" {
+			return "systemctl reboot"
+		}
 		if action == "sleep" {
 			return "systemctl suspend"
 		}
 	case "darwin":
 		if action == "shutdown" {
 			return "osascript -e tell app System Events to shut down"
+		}
+		if action == "reboot" {
+			return "osascript -e 'tell app \"System Events\" to restart'"
 		}
 		if action == "sleep" {
 			return "pmset sleepnow"

@@ -37,7 +37,7 @@ wol-host-agent: wol-host-agent
 wol-host-agent:
 wol-host-agent: Authenticated power-management API for WOL Web.
 wol-host-agent:
-wol-host-agent: Provides shutdown and S3 sleep endpoints for a target Unraid host.
+wol-host-agent: Provides shutdown, reboot, and S3 sleep endpoints for a target Unraid host.
 wol-host-agent:
 wol-host-agent:
 wol-host-agent:

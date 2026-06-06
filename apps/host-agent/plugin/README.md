@@ -89,5 +89,6 @@ The plugin configures Unraid-specific commands:
 
 ```text
 shutdown -> powerdown
+reboot   -> reboot
 sleep    -> echo -n mem > /sys/power/state
 ```

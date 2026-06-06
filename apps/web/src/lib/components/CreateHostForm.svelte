@@ -102,9 +102,8 @@
 				return;
 			}
 
-			$formData = emptyFormData();
-			editingHost = null;
-			loadedHostId = null;
+			resetForm();
+			onSaved?.();
 			cancel();
 		}
 	});
@@ -112,10 +111,23 @@
 
 	let {
 		editingHost = $bindable<HostsRecord | null>(null),
+		onCancel,
+		onSaved,
 		class: className
-	}: { editingHost?: HostsRecord | null; class?: string } = $props();
+	}: {
+		editingHost?: HostsRecord | null;
+		onCancel?: () => void;
+		onSaved?: () => void;
+		class?: string;
+	} = $props();
 
 	let loadedHostId = $state<string | null>(null);
+
+	function resetForm() {
+		$formData = emptyFormData();
+		editingHost = null;
+		loadedHostId = null;
+	}
 
 	$effect(() => {
 		if (editingHost && editingHost.id !== loadedHostId) {
@@ -243,5 +255,18 @@
 		</Form.Control>
 		<Form.FieldErrors />
 	</Form.Field>
-	<Form.Button class="col-span-2 my-1 w-full">{editingHost ? 'Edit' : 'Create'}</Form.Button>
+	<div class="col-span-2 mt-4 flex gap-2">
+		<Button
+			type="button"
+			variant="outline"
+			class="w-full"
+			onclick={() => {
+				resetForm();
+				onCancel?.();
+			}}
+		>
+			Cancel
+		</Button>
+		<Form.Button class="w-full">{editingHost ? 'Edit' : 'Create'}</Form.Button>
+	</div>
 </form>

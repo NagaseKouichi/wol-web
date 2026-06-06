@@ -1,7 +1,7 @@
 # WOL Host Agent
 
 Small authenticated API that runs on a target host and lets `wol-web` request
-shutdown or sleep while the host is online.
+shutdown, reboot, or sleep while the host is online.
 
 ## Run
 
@@ -113,10 +113,11 @@ To start at boot, add this line to `/boot/config/go`:
 Alternatively, install the Unraid User Scripts plugin and run the same startup
 script at array start.
 
-Unraid shutdown/sleep defaults:
+Unraid shutdown/reboot/sleep defaults:
 
 ```text
 shutdown -> powerdown
+reboot   -> reboot
 sleep    -> echo -n mem > /sys/power/state
 ```
 
@@ -142,6 +143,14 @@ POST /api/power
 Authorization: Bearer <token>
 Content-Type: application/json
 
+{"action":"reboot"}
+```
+
+```http
+POST /api/power
+Authorization: Bearer <token>
+Content-Type: application/json
+
 {"action":"sleep"}
 ```
 
@@ -151,6 +160,7 @@ Linux:
 
 ```text
 shutdown -> systemctl poweroff
+reboot   -> systemctl reboot
 sleep    -> systemctl suspend
 ```
 
@@ -158,6 +168,7 @@ Windows:
 
 ```text
 shutdown -> shutdown /s /t 0
+reboot   -> shutdown /r /t 0
 sleep    -> rundll32.exe powrprof.dll,SetSuspendState 0,1,0
 ```
 
@@ -172,8 +183,9 @@ Custom commands can be configured:
 
 ```bash
 export HOST_AGENT_SHUTDOWN_CMD="systemctl poweroff"
+export HOST_AGENT_REBOOT_CMD="systemctl reboot"
 export HOST_AGENT_SLEEP_CMD="systemctl suspend"
 ```
 
-The agent needs enough OS privileges to run the configured shutdown/sleep
+The agent needs enough OS privileges to run the configured shutdown/reboot/sleep
 commands.

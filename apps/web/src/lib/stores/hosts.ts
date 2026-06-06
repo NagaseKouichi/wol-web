@@ -19,6 +19,8 @@ export type HostFormData = {
 	port: number;
 };
 
+export type HostPowerAction = 'shutdown' | 'sleep' | 'reboot';
+
 export function createHostsStore() {
 	const hosts = writable<HostsRecord[]>([]);
 	const statuses = writable<Record<string, HostStatus>>({});
@@ -171,7 +173,7 @@ export function createHostsStore() {
 			});
 	}
 
-	async function powerHost(host: HostsRecord, action: 'shutdown' | 'sleep') {
+	async function powerHost(host: HostsRecord, action: HostPowerAction) {
 		pb.send('/api/host-power', {
 			method: 'POST',
 			headers: {
@@ -181,7 +183,13 @@ export function createHostsStore() {
 			body: JSON.stringify({ id: host.id, action })
 		})
 			.then(() => {
-				toast.success(action === 'shutdown' ? 'Shutdown requested' : 'Sleep requested');
+				const message =
+					action === 'shutdown'
+						? 'Shutdown requested'
+						: action === 'reboot'
+							? 'Reboot requested'
+							: 'Sleep requested';
+				toast.success(message);
 				pollHostStatus(host, false);
 			})
 			.catch((err) => {
