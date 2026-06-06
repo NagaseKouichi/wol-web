@@ -1,0 +1,9 @@
+<resources>
+    <color name="app_background">#0A0A0A</color>
+    <color name="app_text">#F5F5F5</color>
+    <color name="app_muted">#A3A3A3</color>
+    <color name="app_input">#171717</color>
+    <color name="app_border">#333333</color>
+    <color name="app_primary">#F5F5F5</color>
+    <color name="app_primary_text">#0A0A0A</color>
+</resources>

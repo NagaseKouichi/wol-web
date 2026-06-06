@@ -33,6 +33,7 @@ coverage
 
 # Turbo
 .turbo
+.gradle-cache/
 
 # Vercel
 .vercel

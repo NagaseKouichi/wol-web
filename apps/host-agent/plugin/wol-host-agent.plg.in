@@ -44,6 +44,7 @@ fi
 <INLINE>
 chmod +x /etc/rc.d/rc.wol-host-agent
 chmod +x /usr/local/emhttp/plugins/&name;/scripts/apply.sh
+rm -f /usr/local/emhttp/plugins/&name;/WOLHostAgentSettings.page
 /usr/local/emhttp/plugins/&name;/scripts/apply.sh || true
 echo ""
 echo "----------------------------------------------------"

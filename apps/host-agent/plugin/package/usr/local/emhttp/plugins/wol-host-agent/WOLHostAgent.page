@@ -1,7 +1,6 @@
-Menu="Settings"
+Menu="Utilities"
 Title="WOL Host Agent"
-Icon="bolt"
-Type="php"
+Icon="fa-bolt"
 ---
 <?php
 $plugin = "wol-host-agent";
@@ -15,9 +14,8 @@ $port = htmlspecialchars($cfg["PORT"] ?? "8765", ENT_QUOTES);
 $enabled = $cfg["ENABLED"] ?? "yes";
 ?>
 
-<form markdown="1" method="POST" action="/update.php" target="progressFrame">
-<input type="hidden" name="#file" value="<?=$plugin?>/<?=$plugin?>.cfg">
-<input type="hidden" name="#command" value="/usr/local/emhttp/plugins/<?=$plugin?>/scripts/apply.sh">
+<form markdown="1" method="POST" action="/plugins/<?=$plugin?>/scripts/save.php" target="progressFrame">
+<input type="hidden" name="csrf_token" value="<?=$var['csrf_token']?>">
 
 _(Enable Agent)_:
 : <select name="ENABLED">
@@ -43,8 +41,8 @@ _(Status)_:
   <span class="orange-text"> - <?=_("Token is not configured")?></span>
   <?php endif; ?>
 
-<input type="submit" name="#default" value="_(Default)_">
-: <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">
+<input type="submit" name="action" value="Apply">
+: <input type="button" value="_(Done)_" onclick="done()">
 </form>
 
 <form markdown="1" method="POST" action="/plugins/<?=$plugin?>/scripts/control.php" target="progressFrame" style="margin-top: 1rem;">

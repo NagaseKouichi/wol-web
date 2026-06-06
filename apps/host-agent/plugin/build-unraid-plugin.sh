@@ -12,6 +12,15 @@ BUILD_DIR="${SCRIPT_DIR}/build"
 PKG_ROOT="${BUILD_DIR}/pkg"
 PACKAGE_FILE="wol-host-agent-${VERSION}-x86_64-1.txz"
 
+if [[ "$BASE_URL" == https://github.com/*/* && "$BASE_URL" != */releases/download/* ]]; then
+	echo "BASE_URL looks like a GitHub repository URL, not a release download URL:"
+	echo "  ${BASE_URL}"
+	echo
+	echo "Use:"
+	echo "  BASE_URL=https://github.com/NagaseKouichi/wol-web/releases/download/${VERSION}"
+	exit 1
+fi
+
 rm -rf "$BUILD_DIR"
 mkdir -p "$DIST_DIR" "$PKG_ROOT"
 
@@ -41,6 +50,7 @@ chmod 0755 "$PKG_ROOT/usr/local/sbin/wol-host-agent"
 chmod 0755 "$PKG_ROOT/etc/rc.d/rc.wol-host-agent"
 chmod 0755 "$PKG_ROOT/usr/local/emhttp/plugins/wol-host-agent/scripts/apply.sh"
 chmod 0644 "$PKG_ROOT/usr/local/emhttp/plugins/wol-host-agent/scripts/control.php"
+chmod 0644 "$PKG_ROOT/usr/local/emhttp/plugins/wol-host-agent/scripts/save.php"
 chmod 0644 "$PKG_ROOT/usr/local/emhttp/plugins/wol-host-agent/WOLHostAgent.page"
 chmod 0644 "$PKG_ROOT/usr/local/emhttp/plugins/wol-host-agent/default.cfg"
 

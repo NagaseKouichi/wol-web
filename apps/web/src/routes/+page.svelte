@@ -6,19 +6,26 @@
 	import { hostsStore } from '$lib/stores/hosts';
 	import type { HostsRecord } from '$lib/pocketbase-types';
 	import autoAnimate from '@formkit/auto-animate';
+	import { onDestroy } from 'svelte';
 
 	let editingHost = $state<HostsRecord | null>(null);
 
 	$effect(() => {
 		if (pb.authStore.isValid) {
 			hostsStore.fetchHosts();
+			hostsStore.startStatusRefresh();
 		} else {
+			hostsStore.stopStatusRefresh();
 			goto('/auth');
 		}
 	});
+
+	onDestroy(() => {
+		hostsStore.stopStatusRefresh();
+	});
 </script>
 
-<main class="pt-20">
+<main class="pt-20 pb-20">
 	<div class="space-y-2">
 		<CreateHostForm bind:editingHost class="mx-auto max-w-[40em]" />
 		<ul use:autoAnimate class="space-y-2">

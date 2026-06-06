@@ -23,6 +23,8 @@ export function createHostsStore() {
 	const hosts = writable<HostsRecord[]>([]);
 	const statuses = writable<Record<string, HostStatus>>({});
 	const statusPollTokens = new Map<string, symbol>();
+	let statusRefreshInterval: ReturnType<typeof setInterval> | undefined;
+	let statusRefreshInFlight = false;
 
 	async function fetchHosts() {
 		const records = await pb.collection('hosts').getFullList();
@@ -51,6 +53,31 @@ export function createHostsStore() {
 		} catch (err) {
 			console.error('Failed to fetch host statuses', err);
 		}
+	}
+
+	function refreshHostStatuses() {
+		if (statusRefreshInFlight) {
+			return;
+		}
+
+		statusRefreshInFlight = true;
+		fetchHostStatuses().finally(() => {
+			statusRefreshInFlight = false;
+		});
+	}
+
+	function startStatusRefresh(intervalMs = 5000) {
+		stopStatusRefresh();
+		refreshHostStatuses();
+		statusRefreshInterval = setInterval(refreshHostStatuses, intervalMs);
+	}
+
+	function stopStatusRefresh() {
+		if (statusRefreshInterval !== undefined) {
+			clearInterval(statusRefreshInterval);
+			statusRefreshInterval = undefined;
+		}
+		statusRefreshInFlight = false;
 	}
 
 	async function fetchHostStatus(host: HostsRecord) {
@@ -170,6 +197,8 @@ export function createHostsStore() {
 		fetchHosts,
 		fetchHostStatuses,
 		fetchHostStatus,
+		startStatusRefresh,
+		stopStatusRefresh,
 		createHost,
 		updateHost,
 		deleteHost,
