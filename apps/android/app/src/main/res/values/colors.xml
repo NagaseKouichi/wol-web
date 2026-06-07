@@ -6,4 +6,5 @@
     <color name="app_border">#333333</color>
     <color name="app_primary">#F5F5F5</color>
     <color name="app_primary_text">#0A0A0A</color>
+    <color name="app_refresh_background">#FFFFFF</color>
 </resources>

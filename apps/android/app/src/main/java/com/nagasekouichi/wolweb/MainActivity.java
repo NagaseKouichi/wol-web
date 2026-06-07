@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.CookieManager;
@@ -34,8 +35,10 @@ public class MainActivity extends Activity {
     private static final String KEY_HTTPS = "https";
 
     private SharedPreferences prefs;
+    private FrameLayout appRoot;
     private WebView webView;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private View settingsView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,9 +65,15 @@ public class MainActivity extends Activity {
 
     @SuppressLint("SetJavaScriptEnabled")
     private void showWebView() {
+        settingsView = null;
+        appRoot = new FrameLayout(this);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(getColorValue(R.color.app_background));
+        appRoot.addView(root, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
 
         int statusBarHeight = getStatusBarHeight();
         FrameLayout toolbar = new FrameLayout(this);
@@ -82,7 +91,9 @@ public class MainActivity extends Activity {
         ));
 
         swipeRefreshLayout = new SwipeRefreshLayout(this);
-        swipeRefreshLayout.setColorSchemeResources(R.color.app_primary);
+        swipeRefreshLayout.setColorSchemeResources(R.color.app_icon_blue);
+        swipeRefreshLayout.setProgressBackgroundColorSchemeResource(R.color.app_refresh_background);
+        swipeRefreshLayout.setProgressViewOffset(false, dp(12), dp(64));
         swipeRefreshLayout.setOnRefreshListener(() -> {
             if (webView != null) {
                 webView.reload();
@@ -127,15 +138,12 @@ public class MainActivity extends Activity {
         toolbar.addView(settingsButton, buttonParams);
         swipeRefreshLayout.addView(webView);
         root.addView(swipeRefreshLayout);
-        setContentView(root);
+        setContentView(appRoot);
 
         webView.loadUrl(buildServerUrl());
     }
 
     private void showSettings(boolean firstLaunch) {
-        webView = null;
-        swipeRefreshLayout = null;
-
         ScrollView scrollView = new ScrollView(this);
         scrollView.setFillViewport(true);
         scrollView.setBackgroundColor(getColorValue(R.color.app_background));
@@ -195,7 +203,7 @@ public class MainActivity extends Activity {
             cancelButton.setTextColor(getColorValue(R.color.app_text));
             cancelButton.setBackgroundColor(Color.TRANSPARENT);
             cancelButton.setAllCaps(false);
-            cancelButton.setOnClickListener(v -> showWebView());
+            cancelButton.setOnClickListener(v -> closeSettings());
             container.addView(cancelButton, fullWidthParams(0, 0, 0, 0));
         }
 
@@ -220,7 +228,23 @@ public class MainActivity extends Activity {
             showWebView();
         });
 
-        setContentView(scrollView);
+        if (!firstLaunch && appRoot != null) {
+            settingsView = scrollView;
+            appRoot.addView(settingsView, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+            ));
+        } else {
+            settingsView = null;
+            setContentView(scrollView);
+        }
+    }
+
+    private void closeSettings() {
+        if (settingsView != null && appRoot != null) {
+            appRoot.removeView(settingsView);
+            settingsView = null;
+        }
     }
 
     private ServerConfig normalizeConfig(String rawHost, String rawPort, boolean useHttps) {
@@ -316,6 +340,11 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (settingsView != null) {
+            closeSettings();
+            return;
+        }
+
         if (webView != null && webView.canGoBack()) {
             webView.goBack();
             return;
